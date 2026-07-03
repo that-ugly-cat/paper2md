@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — paper2md</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+    nav { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 0 1.5rem; position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 1040px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 52px; }
+    .brand { font-size: 1rem; font-weight: 900; color: #e2e8f0; }
+    .brand span { color: #63b3ed; }
+    .badge { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: #2d3148; color: #a0aec0; padding: 0.15rem 0.45rem; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; }
+    .nav-right a { font-size: 0.8rem; color: #718096; text-decoration: none; }
+    .nav-right a:hover { color: #e2e8f0; }
+
+    .container { max-width: 1040px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .sub { font-size: 0.82rem; color: #718096; margin-bottom: 1.75rem; }
+
+    .card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.75rem; }
+    .card h2 { font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem; }
+    .create-form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; align-items: end; }
+    .create-form .field { display: flex; flex-direction: column; gap: 0.3rem; }
+    .create-form label { font-size: 0.72rem; color: #718096; }
+    .create-form input {
+      padding: 0.5rem 0.7rem; background: #0f1117; border: 1px solid #2d3148; border-radius: 6px;
+      color: #e2e8f0; font-size: 0.85rem; outline: none;
+    }
+    .create-form input:focus { border-color: #4a6fa5; }
+    .create-form .full { grid-column: 1 / -1; }
+
+    .btn { padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary { background: #0a3c8a; color: #fff; }
+    .btn-primary:hover { background: #0d4fa8; }
+    .btn-danger { background: #2d1515; color: #fc8181; border: 1px solid #7b2020; padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+    .btn-danger:hover { background: #7b2020; color: #fff; }
+    .btn-set { padding: 0.35rem 0.7rem; background: #1a1d27; border: 1px solid #2d3148; border-radius: 5px; color: #a0aec0; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .btn-set:hover { border-color: #4a6fa5; color: #e2e8f0; }
+
+    .empty { color: #718096; font-size: 0.88rem; padding: 3rem 0; text-align: center; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: #718096; padding: 0.6rem 0.8rem; border-bottom: 1px solid #2d3148; }
+    tbody td { padding: 0.7rem 0.8rem; border-bottom: 1px solid #1e2235; font-size: 0.85rem; color: #a0aec0; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,0.02); }
+    tbody tr.inactive td { opacity: 0.45; }
+
+    .name-cell { color: #e2e8f0; font-weight: 600; }
+    .notes-cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .key-cell { display: flex; align-items: center; gap: 0.4rem; }
+    .key-text { font-family: monospace; font-size: 0.78rem; color: #e2e8f0; filter: blur(4px); transition: filter 0.15s; cursor: pointer; user-select: none; }
+    .key-text.visible { filter: none; cursor: default; }
+    .key-toggle { background: none; border: none; color: #4a5568; font-size: 0.72rem; cursor: pointer; padding: 0; line-height: 1; flex-shrink: 0; }
+    .key-toggle:hover { color: #a0aec0; }
+
+    .status-pill { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.15rem 0.5rem; border-radius: 10px; }
+    .status-active { background: #1a3d25; color: #68d391; }
+    .status-inactive { background: #2d1515; color: #fc8181; }
+
+    .row-actions { display: flex; gap: 0.4rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="brand">paper2<span>md</span><span class="badge">admin</span></div>
+    <div class="nav-right"><a href="/admin/logout">Sign out</a></div>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>API Keys</h1>
+  <p class="sub">Issue and manage keys for programmatic access to /convert. The public converter page never needs one.</p>
+
+  <div class="card">
+    <h2>Issue a new key</h2>
+    <form class="create-form" method="post" action="/admin/keys">
+      <div class="field">
+        <label for="first_name">First name</label>
+        <input type="text" id="first_name" name="first_name" required>
+      </div>
+      <div class="field">
+        <label for="last_name">Last name</label>
+        <input type="text" id="last_name" name="last_name" required>
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="field">
+        <button type="submit" class="btn btn-primary">+ Create key</button>
+      </div>
+      <div class="field full">
+        <label for="notes">Notes</label>
+        <input type="text" id="notes" name="notes" placeholder="What is this key for?">
+      </div>
+    </form>
+  </div>
+
+  {% if keys %}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Key</th>
+        <th>Notes</th>
+        <th>Created</th>
+        <th>Last used</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for k in keys %}
+      <tr class="{{ '' if k.active else 'inactive' }}">
+        <td class="name-cell">{{ k.name }}</td>
+        <td>{{ k.email }}</td>
+        <td>
+          <div class="key-cell">
+            <span class="key-text" id="key-{{ k.id }}" onclick="toggleKey({{ k.id }})">{{ k.key }}</span>
+            <button class="key-toggle" onclick="toggleKey({{ k.id }})" title="Show/hide">👁</button>
+          </div>
+        </td>
+        <td class="notes-cell" title="{{ k.notes }}">{{ k.notes or "—" }}</td>
+        <td>{{ k.created_at }}</td>
+        <td>{{ k.last_used_at }}</td>
+        <td><span class="status-pill {{ 'status-active' if k.active else 'status-inactive' }}">{{ 'active' if k.active else 'revoked' }}</span></td>
+        <td>
+          <div class="row-actions">
+            <form method="post" action="/admin/keys/{{ k.id }}/toggle">
+              <button type="submit" class="btn-set">{{ 'Revoke' if k.active else 'Reactivate' }}</button>
+            </form>
+            <form method="post" action="/admin/keys/{{ k.id }}/delete" onsubmit="return confirm('Delete this key permanently?')">
+              <button type="submit" class="btn-danger">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">No API keys yet.</div>
+  {% endif %}
+</div>
+
+<script>
+function toggleKey(id) {
+  document.getElementById("key-" + id).classList.toggle("visible");
+}
+</script>
+</body>
+</html>

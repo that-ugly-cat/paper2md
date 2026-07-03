@@ -14,3 +14,4 @@ services:
     mem_limit: 2000m
     volumes:
       - ./model-cache:/root/.cache
+      - ./data:/app/data

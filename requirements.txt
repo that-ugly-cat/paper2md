@@ -3,3 +3,6 @@ uvicorn[standard]
 python-multipart
 requests
 docling
+sqlalchemy
+pyjwt
+jinja2

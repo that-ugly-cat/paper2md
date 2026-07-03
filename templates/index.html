@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>paper2md</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117; color: #e2e8f0; min-height: 100vh;
+    }
+
+    nav { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 0 1.5rem; }
+    .nav-inner {
+      max-width: 780px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; height: 56px; gap: 1rem;
+    }
+    .brand { font-size: 1.05rem; font-weight: 900; letter-spacing: -0.02em; }
+    .brand span { color: #63b3ed; }
+
+    .admin-box { display: flex; align-items: center; gap: 0.4rem; }
+    .admin-box input[type="password"] {
+      width: 140px; padding: 0.35rem 0.6rem;
+      background: #0f1117; border: 1px solid #2d3148; border-radius: 5px;
+      color: #e2e8f0; font-size: 0.78rem; outline: none;
+    }
+    .admin-box input[type="password"]:focus { border-color: #4a6fa5; }
+    .admin-box .btn-mini {
+      padding: 0.35rem 0.6rem; background: #1a1d27; border: 1px solid #2d3148;
+      border-radius: 5px; color: #a0aec0; font-size: 0.78rem; cursor: pointer;
+    }
+    .admin-box .btn-mini:hover { border-color: #4a6fa5; color: #e2e8f0; }
+    .admin-link { font-size: 0.8rem; color: #718096; text-decoration: none; }
+    .admin-link:hover { color: #e2e8f0; }
+
+    .container { max-width: 780px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+    h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 0.4rem; }
+    .tagline { font-size: 0.9rem; color: #718096; margin-bottom: 2.25rem; }
+
+    .admin-error {
+      max-width: 780px; margin: 0.75rem auto 0; padding: 0.5rem 0.9rem;
+      background: #2d1515; border: 1px solid #7b2020; border-radius: 6px;
+      font-size: 0.8rem; color: #fc8181;
+    }
+
+    .dropzone {
+      border: 2px dashed #2d3148; border-radius: 10px; padding: 2.5rem 1.5rem;
+      text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .dropzone:hover, .dropzone.drag { border-color: #4a6fa5; background: rgba(74,111,165,0.06); }
+    .dropzone .icon { font-size: 1.8rem; margin-bottom: 0.6rem; }
+    .dropzone .main-txt { font-size: 0.92rem; color: #e2e8f0; margin-bottom: 0.3rem; }
+    .dropzone .sub-txt { font-size: 0.78rem; color: #718096; }
+    .dropzone .filename { font-size: 0.88rem; color: #63b3ed; font-weight: 600; margin-top: 0.5rem; word-break: break-all; }
+
+    .actions { display: flex; gap: 0.6rem; margin-top: 1.25rem; align-items: center; }
+    .btn { padding: 0.55rem 1.1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary { background: #0a3c8a; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #0d4fa8; }
+    .btn-primary:disabled { background: #1a1d27; color: #4a5568; cursor: not-allowed; }
+    .btn-ghost { background: none; color: #a0aec0; border: 1px solid #2d3148; }
+    .btn-ghost:hover { border-color: #4a6fa5; color: #e2e8f0; }
+
+    .progress-wrap { display: none; margin-top: 1.25rem; }
+    .progress-wrap.show { display: block; }
+    .progress-label { font-size: 0.78rem; color: #718096; margin-bottom: 0.4rem; }
+    .progress-track { height: 6px; background: #1a1d27; border: 1px solid #2d3148; border-radius: 4px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #0a3c8a, #63b3ed); transition: width 0.4s ease-out; }
+
+    .alert { display: none; margin-top: 1.25rem; padding: 0.6rem 0.9rem; border-radius: 6px; font-size: 0.82rem; }
+    .alert.show { display: block; }
+    .alert-error { background: #2d1515; border: 1px solid #7b2020; color: #fc8181; }
+
+    .result { display: none; margin-top: 2rem; }
+    .result.show { display: block; }
+    .result-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+    .result-title { font-size: 0.9rem; font-weight: 700; }
+    .result-meta { font-size: 0.75rem; color: #4a5568; }
+    .result-box {
+      width: 100%; min-height: 320px; max-height: 480px;
+      background: #1a1d27; border: 1px solid #2d3148; border-radius: 8px;
+      padding: 1rem; font-size: 0.82rem; line-height: 1.6; color: #e2e8f0;
+      white-space: pre-wrap; word-break: break-word; overflow-y: auto;
+    }
+    .result-actions { display: flex; gap: 0.6rem; margin-top: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="brand">paper2<span>md</span></div>
+    {% if is_admin %}
+    <a class="admin-link" href="/admin">Admin panel →</a>
+    {% else %}
+    <form class="admin-box" method="post" action="/admin/login">
+      <input type="password" name="password" placeholder="Admin password" autocomplete="current-password">
+      <button type="submit" class="btn-mini">→</button>
+    </form>
+    {% endif %}
+  </div>
+</nav>
+
+{% if admin_error %}
+<div class="admin-error">Wrong admin password.</div>
+{% endif %}
+
+<div class="container">
+  <h1>paper2md</h1>
+  <p class="tagline">Drop a scientific PDF, get clean text back — reading order fixed, tables/headers/footnotes stripped, references removed.</p>
+
+  <div class="dropzone" id="dropzone">
+    <div class="icon">📄</div>
+    <div class="main-txt">Click to choose a PDF, or drag one here</div>
+    <div class="sub-txt">One file, max {{ anon_max_mb }} MB</div>
+    <div class="filename" id="filename"></div>
+  </div>
+  <input type="file" id="fileInput" accept="application/pdf" style="display:none">
+
+  <div class="actions">
+    <button class="btn btn-primary" id="convertBtn" disabled>Convert</button>
+    <button class="btn btn-ghost" id="clearBtn" style="display:none">Clear</button>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label" id="progressLabel">Converting…</div>
+    <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div class="result" id="result">
+    <div class="result-head">
+      <div class="result-title">Extracted text</div>
+      <div class="result-meta" id="resultMeta"></div>
+    </div>
+    <div class="result-box" id="resultBox"></div>
+    <div class="result-actions">
+      <button class="btn btn-ghost" id="downloadMd">Download .md</button>
+      <button class="btn btn-ghost" id="downloadTxt">Download .txt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MAX_BYTES = {{ anon_max_mb }} * 1024 * 1024;
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+const filenameEl = document.getElementById("filename");
+const convertBtn = document.getElementById("convertBtn");
+const clearBtn = document.getElementById("clearBtn");
+const progressWrap = document.getElementById("progressWrap");
+const progressBar = document.getElementById("progressBar");
+const progressLabel = document.getElementById("progressLabel");
+const errorBox = document.getElementById("errorBox");
+const resultEl = document.getElementById("result");
+const resultBox = document.getElementById("resultBox");
+const resultMeta = document.getElementById("resultMeta");
+
+let selectedFile = null;
+let lastResult = null;
+
+dropzone.addEventListener("click", () => fileInput.click());
+["dragover", "dragenter"].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault(); dropzone.classList.add("drag");
+}));
+["dragleave", "drop"].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault(); dropzone.classList.remove("drag");
+}));
+dropzone.addEventListener("drop", e => {
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", () => {
+  if (fileInput.files.length) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+  hideError();
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    showError("Only PDF files are supported.");
+    return;
+  }
+  if (file.size > MAX_BYTES) {
+    showError(`File is too large (max ${MAX_BYTES / 1024 / 1024} MB).`);
+    return;
+  }
+  selectedFile = file;
+  filenameEl.textContent = file.name;
+  convertBtn.disabled = false;
+  clearBtn.style.display = "";
+  resultEl.classList.remove("show");
+}
+
+clearBtn.addEventListener("click", () => {
+  selectedFile = null;
+  fileInput.value = "";
+  filenameEl.textContent = "";
+  convertBtn.disabled = true;
+  clearBtn.style.display = "none";
+  resultEl.classList.remove("show");
+  hideError();
+});
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.classList.add("show");
+}
+function hideError() {
+  errorBox.classList.remove("show");
+}
+
+let progressTimer = null;
+function startFakeProgress() {
+  progressWrap.classList.add("show");
+  progressBar.style.width = "0%";
+  const start = Date.now();
+  progressTimer = setInterval(() => {
+    const elapsed = (Date.now() - start) / 1000;
+    const pct = 92 * (1 - Math.exp(-elapsed / 12));
+    progressBar.style.width = pct.toFixed(1) + "%";
+  }, 200);
+}
+function finishProgress() {
+  clearInterval(progressTimer);
+  progressBar.style.width = "100%";
+  setTimeout(() => progressWrap.classList.remove("show"), 500);
+}
+
+convertBtn.addEventListener("click", async () => {
+  if (!selectedFile) return;
+  hideError();
+  resultEl.classList.remove("show");
+  convertBtn.disabled = true;
+  clearBtn.style.display = "none";
+  startFakeProgress();
+
+  const form = new FormData();
+  form.append("file", selectedFile);
+  form.append("format", "json");
+
+  try {
+    const resp = await fetch("/convert", { method: "POST", body: form });
+    const data = await resp.json();
+    finishProgress();
+    convertBtn.disabled = false;
+    clearBtn.style.display = "";
+    if (!resp.ok) {
+      showError(data.detail || `Conversion failed (${resp.status}).`);
+      return;
+    }
+    lastResult = data;
+    resultBox.textContent = data.text;
+    resultMeta.textContent = `${data.pages} pages · ${data.seconds}s`;
+    resultEl.classList.add("show");
+  } catch (err) {
+    finishProgress();
+    convertBtn.disabled = false;
+    clearBtn.style.display = "";
+    showError("Network error — the server may be unreachable.");
+  }
+});
+
+function download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("downloadMd").addEventListener("click", () => {
+  if (!lastResult) return;
+  const base = (selectedFile?.name || "paper2md-output").replace(/\.pdf$/i, "");
+  download(lastResult.markdown, base + ".md", "text/markdown");
+});
+document.getElementById("downloadTxt").addEventListener("click", () => {
+  if (!lastResult) return;
+  const base = (selectedFile?.name || "paper2md-output").replace(/\.pdf$/i, "");
+  download(lastResult.text, base + ".txt", "text/plain");
+});
+</script>
+</body>
+</html>
