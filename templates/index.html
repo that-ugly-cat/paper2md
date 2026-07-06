@@ -84,6 +84,18 @@
       white-space: pre-wrap; word-break: break-word; overflow-y: auto;
     }
     .result-actions { display: flex; gap: 0.6rem; margin-top: 0.9rem; }
+
+    .why-slow-link { font-size: 0.8rem; color: #4a6fa5; text-decoration: none; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+    .why-slow-link:hover { color: #63b3ed; text-decoration: underline; }
+
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1.5rem; }
+    .overlay.open { display: flex; }
+    .help-modal { background: #1a1d27; border: 1px solid #2d3148; border-radius: 10px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; padding: 1.5rem; }
+    .help-modal h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: #e2e8f0; }
+    .help-modal p { font-size: 0.85rem; color: #a0aec0; line-height: 1.7; margin-bottom: 0.9rem; }
+    .help-modal p:last-of-type { margin-bottom: 1.25rem; }
+    .btn-close { width: 100%; padding: 0.55rem; background: #1e2235; border: 1px solid #2d3148; border-radius: 6px; color: #a0aec0; font-size: 0.82rem; cursor: pointer; }
+    .btn-close:hover { border-color: #4a6fa5; color: #e2e8f0; }
   </style>
 </head>
 <body>
@@ -108,7 +120,8 @@
 
 <div class="container">
   <h1>paper2md</h1>
-  <p class="tagline">Drop a scientific PDF, get clean text back — reading order fixed, tables/headers/footnotes stripped, references removed.</p>
+  <p class="tagline">Drop a scientific PDF, get clean text back — reading order fixed, tables/headers/footnotes stripped, references removed.
+  <button class="why-slow-link" onclick="document.getElementById('whySlowOverlay').classList.add('open')">Why is this slow?</button></p>
 
   <div class="dropzone" id="dropzone">
     <div class="icon">📄</div>
@@ -140,6 +153,16 @@
       <button class="btn btn-ghost" id="downloadMd">Download .md</button>
       <button class="btn btn-ghost" id="downloadTxt">Download .txt</button>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="whySlowOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="help-modal">
+    <h2>Why is this so slow?</h2>
+    <p>Because it's absurdly overkill, and it's overkill for a reason: a huge share of published scientific PDFs are formatted like a crime scene. Two-column layouts that fall apart under naive extraction. Headers, footers and footnotes bleeding into the body text. Sentences split across a page break by a stray copyright notice. Reading order that only makes sense once you already know what the paper says.</p>
+    <p>None of that is exotic. It's most of the literature. Getting clean text out of it reliably, without babysitting every single PDF by hand, means running a full document-layout model instead of just grepping bytes out of a file. Hence the 10-30 seconds a paper, hence the CPU cap, hence the queue.</p>
+    <p>Journals that publish proper structured XML instead of print-shaped PDFs (JMIR, PLOS, and a handful of others) make all of this unnecessary: reading order isn't a mystery, nothing needs reconstructing, the metadata is just there. More publishers doing that would put this tool out of a job tomorrow. Until then: it's slow because the input is bad, not because Docling is lazy.</p>
+    <button class="btn-close" onclick="document.getElementById('whySlowOverlay').classList.remove('open')">Got it</button>
   </div>
 </div>
 
@@ -279,6 +302,10 @@ document.getElementById("downloadTxt").addEventListener("click", () => {
   if (!lastResult) return;
   const base = (selectedFile?.name || "paper2md-output").replace(/\.pdf$/i, "");
   download(lastResult.text, base + ".txt", "text/plain");
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") document.getElementById("whySlowOverlay").classList.remove("open");
 });
 </script>
 </body>

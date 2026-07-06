@@ -49,6 +49,27 @@ you can issue API keys (name, email, notes) and revoke/delete them. Requires
 `ADMIN_PASSWORD` to be set — see `.env.example`. State lives in one SQLite
 file under `data/`.
 
+## Why is this so slow
+
+Because it's absurdly overkill, and it's overkill for a reason: a huge share
+of published scientific PDFs are formatted like a crime scene. Two-column
+layouts that fall apart under naive extraction. Headers, footers and
+footnotes bleeding into the body text. Sentences split across a page break
+by a stray copyright notice. Reading order that only makes sense once you
+already know what the paper says.
+
+None of that is exotic. It's most of the literature. Getting clean text out
+of it reliably, without babysitting every single PDF by hand, means running
+a full document-layout model instead of just grepping bytes out of a file.
+Hence the 10-30 seconds a paper, hence the CPU cap, hence the queue.
+
+Journals that publish proper structured XML instead of print-shaped PDFs
+(JMIR, PLOS, and a handful of others) make all of this unnecessary: reading
+order isn't a mystery, nothing needs reconstructing, the metadata is just
+there. More publishers doing that would put this tool out of a job
+tomorrow. Until then: it's slow because the input is bad, not because
+Docling is lazy.
+
 ## Design notes
 
 - **Only born-digital PDFs.** OCR is off — scanned/image-only PDFs won't extract text. Kept out on purpose to avoid the extra OCR engine weight/complexity; revisit if it's actually needed.
