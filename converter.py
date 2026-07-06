@@ -210,6 +210,13 @@ def normalize_extracted_text(text: str) -> str:
     text = re.sub(r"(?<=\d)\s*[-–]\s*(?=\d)", "–", text)
     text = re.sub(r"\bGPT3\b", "GPT-3", text)
     text = re.sub(r"[ \t]+", " ", text)
+
+    # Rejoin words the PDF split across a line break with a hyphen. The layout
+    # model reports these as "prefix -suffix" (space before the hyphen, hyphen
+    # glued to a lowercase continuation). Real compounds ("grief-oriented",
+    # "death-care") have no space before the hyphen, so they're left intact.
+    text = re.sub(r"([A-Za-z]{2,})[ \n]+-([a-z]{2,})", r"\1\2", text)
+
     text = re.sub(r"\n{3,}", "\n\n", text)
     text = "\n".join(line.strip() for line in text.splitlines()).strip()
 
