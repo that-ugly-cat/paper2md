@@ -56,7 +56,9 @@ STRONG_SENTENCE_END = re.compile(r"[.!?][\"'’”\)\]]*$")
 # The scheme itself may be broken glyph-by-glyph ("h t t p s : / /"), so allow
 # whitespace between every character of it.
 _URL_TO_EOL = re.compile(r"h\s*t\s*t\s*p\s*s?\s*:\s*/\s*/[^\n]*", re.IGNORECASE)
-_URL_SOLID = re.compile(r"https?://\S+")
+# Also shield mailto: links — the markdown export carries them (e.g.
+# "[name](mailto:x@y)"), and the colon-spacing rule would otherwise break them.
+_URL_SOLID = re.compile(r"(?:https?://|mailto:)\S+", re.IGNORECASE)
 
 
 def reflow_spaced_urls(text: str) -> str:
@@ -244,7 +246,11 @@ def pdf_to_clean_text(
     result = converter.convert(pdf_path)
     conversion_seconds = perf_counter() - started
 
+    # The same whitespace/URL/hyphenation cleanup is safe on the Markdown export:
+    # it preserves line structure (headings, bullets, tables all live on their
+    # own lines and Docling never nests them), so only the noise gets scrubbed.
     raw_markdown = result.document.export_to_markdown(image_placeholder="")
+    clean_markdown = normalize_extracted_text(raw_markdown)
 
     blocks = document_to_blocks(
         result.document,
@@ -258,7 +264,7 @@ def pdf_to_clean_text(
 
     return {
         "text": clean_text,
-        "markdown": raw_markdown,
+        "markdown": clean_markdown,
         "blocks": len(blocks),
         "pages": len(pages),
         "seconds": round(conversion_seconds, 1),
