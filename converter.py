@@ -48,6 +48,31 @@ NOISE_PATTERNS = [
 
 STRONG_SENTENCE_END = re.compile(r"[.!?][\"'’”\)\]]*$")
 
+# A URL running from its scheme to the end of the line. Papers often justify or
+# letter-space long URLs, so the layout model reports them with whitespace (and
+# tabs) scattered through — either glyph-by-glyph ("h t t p s : / / d o i ...")
+# or in chunks ("https:/ /doi.or g/..."). We reconstruct those, and shield every
+# URL from the punctuation/en-dash normalization that would otherwise mangle it.
+# The scheme itself may be broken glyph-by-glyph ("h t t p s : / /"), so allow
+# whitespace between every character of it.
+_URL_TO_EOL = re.compile(r"h\s*t\s*t\s*p\s*s?\s*:\s*/\s*/[^\n]*", re.IGNORECASE)
+_URL_SOLID = re.compile(r"https?://\S+")
+
+
+def reflow_spaced_urls(text: str) -> str:
+    """Collapse whitespace inside URLs the PDF broke up by justification. Only
+    fires when the domain itself contains whitespace — a domain can't legally
+    hold a space, so that's a reliable fragmentation signal and leaves normal
+    inline URLs ('see https://x for details') untouched."""
+    def fix(match: Any) -> str:
+        span = match.group(0)
+        after_scheme = re.split(r"/\s*/", span, maxsplit=1)[-1]
+        domain = re.split(r"/", after_scheme, maxsplit=1)[0]
+        if not re.search(r"\S\s+\S", domain):
+            return span
+        return re.sub(r"\s+", "", span)
+    return _URL_TO_EOL.sub(fix, text)
+
 
 def make_converter() -> DocumentConverter:
     """Converter configured for born-digital scientific papers (no OCR, no tables)."""
@@ -165,6 +190,17 @@ def normalize_extracted_text(text: str) -> str:
     text = unicodedata.normalize("NFKC", text)
     text = text.replace("­", "").replace("​", "").replace("﻿", "")
     text = text.replace("\xa0", " ").replace("ﬁ", "fi").replace("ﬂ", "fl")
+
+    # Reconstruct justified/letter-spaced URLs, then park every URL behind a
+    # placeholder so the punctuation and digit-hyphen-to-en-dash rules below
+    # (meant for prose and page ranges) can't corrupt DOIs and query strings.
+    text = reflow_spaced_urls(text)
+    urls: list[str] = []
+    def _stash(match: Any) -> str:
+        urls.append(match.group(0))
+        return f"\x00URL{len(urls) - 1}\x00"
+    text = _URL_SOLID.sub(_stash, text)
+
     text = re.sub(r"\b([A-Za-z]+)\s+[’']\s+s\b", r"\1's", text)
     text = re.sub(r"\b([A-Za-z]+)\s+[’'](?=\s)", r"\1'", text)
     text = re.sub(r"\(\s+", "(", text)
@@ -175,7 +211,11 @@ def normalize_extracted_text(text: str) -> str:
     text = re.sub(r"\bGPT3\b", "GPT-3", text)
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
-    return "\n".join(line.strip() for line in text.splitlines()).strip()
+    text = "\n".join(line.strip() for line in text.splitlines()).strip()
+
+    for i, url in enumerate(urls):
+        text = text.replace(f"\x00URL{i}\x00", url)
+    return text
 
 
 def blocks_to_text(blocks: list[dict[str, Any]]) -> str:
