@@ -1,10 +1,12 @@
 # paper2md
 
-A minimal service that turns a scientific PDF into clean text (plus raw
+A minimal service that turns a scientific PDF into clean text (plus clean
 Markdown) using [Docling](https://github.com/docling-project/docling)'s
 layout model — reading order reconstruction, dropped tables/images/captions/
 headers/footers/footnotes, rejoined sentences, stripped copyright/download
-boilerplate.
+boilerplate. Both outputs get the same cleanup pass: justified/letter-spaced
+URLs reconstructed, hyphenated line-break words rejoined, stray whitespace
+collapsed.
 
 Two ways in:
 - **Public web page** (`/`) — drop a PDF, get text back, download `.md`/`.txt`. No login.
@@ -45,8 +47,9 @@ swallow the references, since nothing after that first cut point is kept.
 {"text": "...", "markdown": "...", "blocks": 123, "pages": 12, "seconds": 8.4}
 ```
 
-`text` is the cleaned, reflowed text; `markdown` is Docling's raw structural
-export (headings, lists, etc. as Markdown, no cleanup pass) — grab whichever
+`text` is the cleaned, reflowed plain text; `markdown` is the same content with
+Docling's structure preserved (headings, lists, tables) and the same cleanup
+pass applied to the prose — grab whichever
 one fits what you're feeding it into.
 
 **Auth and limits:** no `X-API-Key` header → anonymous/web use, capped at
