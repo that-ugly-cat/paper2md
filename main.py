@@ -138,6 +138,7 @@ async def convert(
     file: UploadFile | None = File(None),
     url: str | None = Form(None),
     remove_references: bool = Form(True),
+    remove_end_matter: bool = Form(False),
     format: str = Form("json"),
     x_api_key: str | None = Header(None),
     db: Session = Depends(get_db),
@@ -168,7 +169,7 @@ async def convert(
             try:
                 result = await asyncio.wait_for(
                     loop.run_in_executor(
-                        _executor, pdf_to_clean_text, _get_converter(), pdf_path, remove_references, False
+                        _executor, pdf_to_clean_text, _get_converter(), pdf_path, remove_references, remove_end_matter
                     ),
                     timeout=CONVERT_TIMEOUT_SECONDS,
                 )
