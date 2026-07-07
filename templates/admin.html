@@ -54,9 +54,10 @@
 
     .key-cell { display: flex; align-items: center; gap: 0.4rem; }
     .key-text { font-family: monospace; font-size: 0.78rem; color: #e2e8f0; filter: blur(4px); transition: filter 0.15s; cursor: pointer; user-select: none; }
-    .key-text.visible { filter: none; cursor: default; }
-    .key-toggle { background: none; border: none; color: #4a5568; font-size: 0.72rem; cursor: pointer; padding: 0; line-height: 1; flex-shrink: 0; }
-    .key-toggle:hover { color: #a0aec0; }
+    .key-text.visible { filter: none; cursor: text; user-select: all; }
+    .key-toggle, .key-copy { background: none; border: none; color: #4a5568; font-size: 0.72rem; cursor: pointer; padding: 0; line-height: 1; flex-shrink: 0; }
+    .key-toggle:hover, .key-copy:hover { color: #a0aec0; }
+    .key-copy.copied { color: #68d391; }
 
     .status-pill { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.15rem 0.5rem; border-radius: 10px; }
     .status-active { background: #1a3d25; color: #68d391; }
@@ -126,6 +127,7 @@
           <div class="key-cell">
             <span class="key-text" id="key-{{ k.id }}" onclick="toggleKey({{ k.id }})">{{ k.key }}</span>
             <button class="key-toggle" onclick="toggleKey({{ k.id }})" title="Show/hide">👁</button>
+            <button class="key-copy" data-key="{{ k.key }}" onclick="copyKey(this)" title="Copy to clipboard">⧉</button>
           </div>
         </td>
         <td class="notes-cell" title="{{ k.notes }}">{{ k.notes or "—" }}</td>
@@ -154,6 +156,27 @@
 <script>
 function toggleKey(id) {
   document.getElementById("key-" + id).classList.toggle("visible");
+}
+
+async function copyKey(btn) {
+  const key = btn.dataset.key;
+  try {
+    await navigator.clipboard.writeText(key);
+  } catch {
+    // Fallback for non-secure contexts (clipboard API needs HTTPS/localhost)
+    const ta = document.createElement("textarea");
+    ta.value = key;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  const original = btn.textContent;
+  btn.textContent = "✓";
+  btn.classList.add("copied");
+  setTimeout(() => { btn.textContent = original; btn.classList.remove("copied"); }, 1200);
 }
 </script>
 </body>
