@@ -6,3 +6,6 @@ __pycache__/
 model-cache/
 data/
 *.pdf
+
+# deployment-local: the shared-network wiring differs per host
+docker-compose.yml

@@ -1,0 +1,35 @@
+services:
+  app:
+    build: .
+    container_name: paper2md
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8008:8000"
+    env_file:
+      - .env
+    # Guardrail on the shared 4 GB / 2-CPU box: cap this service to half the
+    # CPU so a conversion burst can't starve the other containers, and pin
+    # RAM in case Docling/torch model loading spikes.
+    cpus: "1.0"
+    mem_limit: 2000m
+    volumes:
+      - ./model-cache:/root/.cache
+      - ./data:/app/data
+
+# ── Co-located clients (optional, deployment-specific) ────────────────────────
+# When another container on the same host converts PDFs through this service,
+# route it container-to-container instead of through the public URL: a proxy in
+# front (Cloudflare's ~100s ceiling, for one) times out on exactly the large PDFs
+# that need converting, and the client sees a 524 it can do nothing about.
+#
+#   docker network create paper2md-shared
+#
+# then uncomment on the service above:
+#   networks: [default, paper2md-shared]
+# and at the end of the file:
+#   networks:
+#     paper2md-shared:
+#       external: true
+#
+# Clients join the same network and use http://paper2md:8000. The loopback port
+# binding stays, so the proxy and anything on the host keep working.
