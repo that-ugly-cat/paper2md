@@ -145,3 +145,16 @@ Docling is lazy.
 - Conversions time out after `CONVERT_TIMEOUT_SECONDS` (default 300s).
 
 See `DEPLOY.md` for running it.
+
+## Optional: behind an SSO gate
+
+`AUTH_MODE=gateway` replaces the admin password with an upstream `forward_auth`
+gate, so `/admin` is guarded by a session the gate owns rather than by a value
+in `.env`. The converter itself does not move: `/` and `/convert` stay open, and
+`/convert` keeps accepting `X-API-Key` exactly as described above — co-located
+clients that call the service over a private network never meet the proxy at
+all.
+
+`local` is the default and stays fully supported: it is what a fresh clone runs,
+what rollback returns to, and what works on a machine with no gate in front.
+Details in `DEPLOY.md` §9.
