@@ -13,7 +13,13 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Red
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from auth import check_admin_password, create_admin_token, is_admin_request, require_admin
+from auth import (
+    check_admin_password,
+    create_admin_token,
+    gateway_mode,
+    is_admin_request,
+    require_admin,
+)
 from converter import make_converter, pdf_to_clean_text
 from models import ApiKey, generate_key, get_db, init_db
 
@@ -125,6 +131,7 @@ async def index(request: Request, admin_error: int = 0):
         "anon_max_mb": ANON_MAX_UPLOAD_BYTES // (1024 * 1024),
         "admin_error": bool(admin_error),
         "is_admin": is_admin_request(request),
+        "gateway": gateway_mode(),
     })
 
 
@@ -186,8 +193,17 @@ async def convert(
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 
+BORANT_LOGOUT_URL = os.environ.get("BORANT_LOGOUT_URL", "https://id.borant.eu/logout")
+
+
 @app.post("/admin/login")
 async def admin_login(password: str = Form(...)):
+    # The app knows its own mode better than the proxy does, so it switches its
+    # local login off itself rather than relying on the gate to hide the route.
+    # Leaving it reachable would mean two ways in, and the SSO would not
+    # actually be enforced.
+    if gateway_mode():
+        return RedirectResponse("/", status_code=302)
     if not check_admin_password(password):
         return RedirectResponse("/?admin_error=1", status_code=302)
     resp = RedirectResponse("/admin", status_code=302)
@@ -197,7 +213,9 @@ async def admin_login(password: str = Form(...)):
 
 @app.get("/admin/logout")
 async def admin_logout():
-    resp = RedirectResponse("/", status_code=302)
+    # In gateway mode "log out" has to reach the gate too, otherwise the
+    # central session survives and the next click walks straight back in.
+    resp = RedirectResponse(BORANT_LOGOUT_URL if gateway_mode() else "/", status_code=302)
     resp.delete_cookie("admin_token")
     return resp
 

@@ -116,7 +116,7 @@
     <div class="brand">paper2<span>md</span></div>
     {% if is_admin %}
     <a class="admin-link" href="/admin">Admin panel →</a>
-    {% else %}
+    {% elif not gateway %}
     <form class="admin-box" method="post" action="/admin/login">
       <input type="password" name="password" placeholder="Admin password" autocomplete="current-password">
       <button type="submit" class="btn-mini">→</button>
