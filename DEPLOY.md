@@ -140,6 +140,33 @@ that header. Turn `gateway` on only once the gate is actually there, and leave
 `ADMIN_PASSWORD` populated: it is what you fall back to when you set
 `AUTH_MODE=local` again.
 
+**Only `/admin` moves.** The converter is the product — a public page that
+converts a PDF with no account — so gating the whole host would take away the
+thing the service is for. The proxy block therefore splits by path, and the
+matcher lists the **public** paths rather than the private ones on purpose: the
+default branch is the gated one, so a route added later starts closed instead
+of open.
+
+```
+paper2md.example.com {
+    @public path / /health /convert
+    handle @public {
+        import noforge
+        import nocookie
+        reverse_proxy localhost:8008
+    }
+    handle {
+        import borantid
+        reverse_proxy localhost:8008
+    }
+}
+```
+
+The public set is closed and read off the code: `index.html` loads no assets —
+its CSS and JS are inline — and calls nothing but `/convert`. `/convert` keeps
+honouring `X-API-Key` on the public branch, and co-located clients that reach
+the service over a private Docker network never touch the proxy at all.
+
 `BORANT_TRUSTED_PROXY` is the second lock, and **it is the setting people get
 wrong**. Under Docker the proxy runs on the host, so the container does not see
 `127.0.0.1` — it sees the bridge gateway of a Docker network. When the
