@@ -116,7 +116,12 @@
     <div class="brand">paper2<span>md</span></div>
     {% if is_admin %}
     <a class="admin-link" href="/admin">Admin panel →</a>
-    {% elif not gateway %}
+    {% elif gateway %}
+    {# This page may be served on a public path, where the gate passes no
+       identity headers — so we cannot tell an admin from a visitor here. The
+       link goes to /admin, which is gated and will ask for a sign-in. #}
+    <a class="admin-link" href="/admin">Admin →</a>
+    {% else %}
     <form class="admin-box" method="post" action="/admin/login">
       <input type="password" name="password" placeholder="Admin password" autocomplete="current-password">
       <button type="submit" class="btn-mini">→</button>
