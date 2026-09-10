@@ -129,6 +129,30 @@ def normalize_heading(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().strip(" .:;–—-").lower()
 
 
+def truncate_markdown_at_headings(markdown: str, stop_headings: set[str]) -> str:
+    """Cut the Markdown export at the first heading the options ask to drop.
+
+    The two checkboxes used to steer only the clean text, because that one is
+    rebuilt block by block while the Markdown comes out of Docling in one call —
+    so a reader who ticked "remove references" still got the bibliography in the
+    .md, and had no way to know. The cut is the part of the filter that means
+    the same thing in both outputs.
+
+    Only the cut. The Markdown keeps tables and figure structure, which is the
+    reason to download it instead of the text, so the label filter stays where
+    it is.
+    """
+    if not stop_headings:
+        return markdown
+    lines = markdown.split("\n")
+    for i, line in enumerate(lines):
+        if not line.startswith("#"):
+            continue
+        if normalize_heading(line.lstrip("#")) in stop_headings:
+            return "\n".join(lines[:i]).rstrip() + "\n"
+    return markdown
+
+
 def is_noise_segment(text: str) -> bool:
     normalized = re.sub(r"\s+", " ", text).strip()
     return any(re.search(pattern, normalized, flags=re.IGNORECASE) for pattern in NOISE_PATTERNS)
@@ -251,6 +275,13 @@ def pdf_to_clean_text(
     # own lines and Docling never nests them), so only the noise gets scrubbed.
     raw_markdown = result.document.export_to_markdown(image_placeholder="")
     clean_markdown = normalize_extracted_text(raw_markdown)
+
+    stop_headings: set[str] = set()
+    if remove_references:
+        stop_headings |= REFERENCE_HEADINGS
+    if remove_end_matter:
+        stop_headings |= OPTIONAL_END_HEADINGS
+    clean_markdown = truncate_markdown_at_headings(clean_markdown, stop_headings)
 
     blocks = document_to_blocks(
         result.document,

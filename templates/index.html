@@ -84,6 +84,8 @@
       white-space: pre-wrap; word-break: break-word; overflow-y: auto;
     }
     .result-actions { display: flex; gap: 0.6rem; margin-top: 0.9rem; }
+    .result-note { font-size: 0.75rem; color: #4a5568; line-height: 1.55; margin-top: 0.7rem; max-width: 60ch; }
+    .result-note strong { color: #718096; }
 
     .why-slow-link { font-size: 0.8rem; color: #4a6fa5; text-decoration: none; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
     .why-slow-link:hover { color: #63b3ed; text-decoration: underline; }
@@ -180,6 +182,12 @@
       <button class="btn btn-ghost" id="downloadMd">Download .md</button>
       <button class="btn btn-ghost" id="downloadTxt">Download .txt</button>
     </div>
+    <!-- The two outputs are two different cuts, not two formats of one. Both
+         obey the checkboxes above; only the .txt drops tables and figures. -->
+    <p class="result-note">The <strong>.txt</strong> is body prose: tables, figures, captions,
+      headers and footnotes removed, sentences broken across pages rejoined. The
+      <strong>.md</strong> keeps the document structure, tables included. Both stop where the
+      options above say to stop.</p>
   </div>
 </div>
 
