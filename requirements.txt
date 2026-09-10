@@ -7,3 +7,4 @@ docling
 sqlalchemy
 pyjwt
 jinja2
+markdown
