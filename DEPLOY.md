@@ -60,7 +60,7 @@ Check it came up clean:
 docker compose logs -f
 ```
 
-- `cpus: "1.0"` in `docker-compose.yml` caps the container to half the CPU cores of a 2-core box. Adjust that value (and `mem_limit`) if your box has a different shape.
+- `cpus: "1.0"` in `docker-compose.yml` caps the container to half the CPU cores of a 2-core box. Adjust that value if your box has a different shape. `mem_limit` is 4g and shouldn't go lower: a 12-page paper peaks around 1.8 GiB, and a container killed at the ceiling shows up in clients as a connection closed without a response, not as an error.
 - `./model-cache` persists Docling's layout model (downloaded from Hugging Face on first conversion, a few hundred MB) across rebuilds — otherwise every rebuild re-downloads it.
 - `./data` holds `paper2md.db` (API keys only — the converter itself keeps no state). Back it up like any SQLite file: `cp data/paper2md.db backup-$(date +%F).db`.
 - **The first conversion after a fresh deploy will be slow** (model download + load). Do one warm-up request before pointing real traffic at it:

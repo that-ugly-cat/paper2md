@@ -3,7 +3,9 @@ starlette==1.3.1
 uvicorn[standard]
 python-multipart
 requests
-docling
+# Pinned: the rebuild on the VPS move pulled a newer Docling whose peak memory
+# ran into the old 2000m ceiling. Bump deliberately, and re-measure the peak.
+docling==2.129.0
 sqlalchemy
 pyjwt
 jinja2
